@@ -19,6 +19,7 @@ export function IframeRenderer({ content, id, className, styles = [], scripts = 
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBaseHref(window.location.origin);
     }
   }, []);

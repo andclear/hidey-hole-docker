@@ -60,9 +60,6 @@ export async function GET(
       const startLine = (page - 1) * limit;
       const endLine = startLine + limit;
       
-      let totalLines = 0; // Estimate or count if possible? S3 doesn't give line count.
-      // We can only count as we go.
-      
       // Streaming Parse
       while (true) {
           const { done, value } = await reader.read();

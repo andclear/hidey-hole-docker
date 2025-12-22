@@ -45,7 +45,7 @@ export function RegexScriptViewer({
 
   const initialKey = useMemo(() => JSON.stringify(initialScripts ?? []), [initialScripts]);
   useEffect(() => {
-    const next = initialScripts ?? [];
+    const next = JSON.parse(initialKey);
     setScripts(prev => {
       const prevKey = JSON.stringify(prev ?? []);
       return prevKey === initialKey ? prev : next;

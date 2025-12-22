@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { Loader2, Share2, Copy, Check } from "lucide-react";
 import { MessageCard, ChatMessageData } from "./message-card";
@@ -163,7 +163,7 @@ export function ChatViewer({ url, cardName, cardId, sessionId }: ChatViewerProps
       };
       
       init();
-  }, [cardId, sessionId, url, regexPipeline]); // Include regexPipeline to trigger re-process if rules change? No, handled inside fetch.
+  }, [cardId, sessionId, url, regexPipeline, fetchChatContent]); // Include regexPipeline to trigger re-process if rules change? No, handled inside fetch.
 
   // Listen for iframe height updates and trigger per-item re-measure
   useEffect(() => {
@@ -182,7 +182,7 @@ export function ChatViewer({ url, cardName, cardId, sessionId }: ChatViewerProps
     return () => window.removeEventListener('message', handler);
   }, []);
 
-  const fetchChatContent = async (pageNum: number) => {
+  const fetchChatContent = useCallback(async (pageNum: number) => {
     try {
       setLoading(true);
       setError("");
@@ -271,7 +271,7 @@ export function ChatViewer({ url, cardName, cardId, sessionId }: ChatViewerProps
       setError("加载失败: " + msg);
       setLoading(false);
     }
-  };
+  }, [url, regexPipeline, LIMIT]);
 
   const changePage = async (newPage: number) => {
       if (newPage < 1) return;

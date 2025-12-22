@@ -1,7 +1,6 @@
 
 import { supabaseAdmin } from "@/lib/supabase";
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveChannel } from "@/lib/ai-service"; // We need to implement this or just query here
 
 export async function POST(request: NextRequest) {
   try {

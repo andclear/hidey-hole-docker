@@ -69,7 +69,7 @@ export async function POST(
     const storagePath = `${folderName}/${fileHash}.${fileExt}`;
 
     // Generate Thumbnail (if PNG)
-    let thumbnailPath = null;
+    let thumbnailPath: string | null = null;
     if (fileExt === 'png') {
         // Optimistically skip sharp if file is small enough? 
         // Or keep it for consistency. Sharp is fast enough usually.

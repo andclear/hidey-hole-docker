@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { getS3Client } from '@/lib/s3';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import archiver from 'archiver';
-import { PassThrough } from 'stream';
+import { PassThrough, Readable } from 'stream';
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
                     });
                     
                     const response = await client.send(command);
-                    const stream = response.Body as NodeJS.ReadableStream;
+                    const stream = response.Body as Readable;
                     
                     if (stream) {
                         let filename = card.name;

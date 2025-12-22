@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         }));
 
         // B. Generate and Upload WebP Thumbnail (Only for PNG)
-        let thumbnailPath = null;
+        let thumbnailPath: string | null = null;
         if (fileExt === 'png') {
             try {
                 const webpBuffer = await sharp(nodeBuffer)

@@ -103,6 +103,7 @@ export default function CardsPage() {
             setLimit(parseInt(settingsData.data.general_config.cards_per_page));
         }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settingsData]);
 
   // Handlers for Sort/Order

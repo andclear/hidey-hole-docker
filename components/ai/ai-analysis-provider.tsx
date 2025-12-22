@@ -33,26 +33,13 @@ export function AIAnalysisProvider({ children }: { children: React.ReactNode }) 
   // Persist queue to localStorage to survive refreshes (optional, but good for UX)
   // For simplicity, we'll just keep it in memory for now, or maybe basic persistence
   
-  const processQueue = useCallback(async () => {
-    const currentQueue = [...queue];
-    const processing = processingRef.current;
-    
-    // Find pending tasks
-    const pendingTasks = currentQueue.filter(t => t.status === "pending");
-    
-    if (pendingTasks.length === 0) return;
-    if (processing.size >= MAX_CONCURRENT) return;
-    
-    // Take next tasks up to limit
-    const availableSlots = MAX_CONCURRENT - processing.size;
-    const tasksToStart = pendingTasks.slice(0, availableSlots);
-    
-    for (const task of tasksToStart) {
-        startTask(task);
-    }
-  }, [queue]);
+  const updateTaskStatus = useCallback((cardId: string, status: AIAnalysisTask['status'], error?: string, result?: any) => {
+      setQueue(prev => prev.map(t => 
+          t.cardId === cardId ? { ...t, status, error, result } : t
+      ));
+  }, []);
 
-  const startTask = async (task: AIAnalysisTask) => {
+  const startTask = useCallback(async (task: AIAnalysisTask) => {
       // Optimistic update status
       updateTaskStatus(task.cardId, "processing");
       processingRef.current.add(task.cardId);
@@ -86,13 +73,26 @@ export function AIAnalysisProvider({ children }: { children: React.ReactNode }) 
           // We need to wait a bit or just trigger state update which triggers effect
           // Since we updated state in updateTaskStatus, effect will run
       }
-  };
+  }, [updateTaskStatus]);
 
-  const updateTaskStatus = (cardId: string, status: AIAnalysisTask['status'], error?: string, result?: any) => {
-      setQueue(prev => prev.map(t => 
-          t.cardId === cardId ? { ...t, status, error, result } : t
-      ));
-  };
+  const processQueue = useCallback(async () => {
+    const currentQueue = [...queue];
+    const processing = processingRef.current;
+    
+    // Find pending tasks
+    const pendingTasks = currentQueue.filter(t => t.status === "pending");
+    
+    if (pendingTasks.length === 0) return;
+    if (processing.size >= MAX_CONCURRENT) return;
+    
+    // Take next tasks up to limit
+    const availableSlots = MAX_CONCURRENT - processing.size;
+    const tasksToStart = pendingTasks.slice(0, availableSlots);
+    
+    for (const task of tasksToStart) {
+        startTask(task);
+    }
+  }, [queue, startTask]);
 
   const addTask = useCallback((cardId: string, cardName: string) => {
       setQueue(prev => {

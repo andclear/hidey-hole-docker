@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,11 +22,7 @@ export function PlaySessionList({ cardId }: PlaySessionListProps) {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    if (cardId) fetchSessions();
-  }, [cardId]);
-
-  const fetchSessions = async () => {
+  const fetchSessions = useCallback(async () => {
     try {
       const res = await fetch(`/api/cards/${cardId}/sessions`);
       const data = await res.json();
@@ -38,7 +34,11 @@ export function PlaySessionList({ cardId }: PlaySessionListProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [cardId]);
+
+  useEffect(() => {
+    if (cardId) fetchSessions();
+  }, [cardId, fetchSessions]);
 
   const handleDelete = async (sessionId: string) => {
     if (!confirm("确定要删除这条记录吗？")) return;
