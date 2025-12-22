@@ -40,6 +40,12 @@ function createChatWorker() {
   return worker;
 }
 
+declare global {
+  interface Window {
+    chatContentCache: Record<string, string>;
+  }
+}
+
 export function ChatViewer({ url, cardName, cardId, sessionId }: ChatViewerProps) {
   const [messages, setMessages] = useState<ChatMessageData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,6 +94,16 @@ export function ChatViewer({ url, cardName, cardId, sessionId }: ChatViewerProps
       toast.success("链接已复制");
   };
 
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [initialLoaded, setInitialLoaded] = useState(false);
+  
+  // Cache for preloaded pages
+  const preloadedPages = useRef<Record<number, ChatMessageData[]>>({});
+
+  const LIMIT = 20;
+
   // Fetch Regex Rules
   useEffect(() => {
     const fetchRegexRules = async () => {
@@ -119,11 +135,35 @@ export function ChatViewer({ url, cardName, cardId, sessionId }: ChatViewerProps
     fetchRegexRules();
   }, [cardId]);
 
+  // Load progress and content on mount
   useEffect(() => {
-    if (url) {
-        fetchChatContent();
-    }
-  }, [url, regexPipeline]);
+      if (!cardId || !sessionId) {
+          if (url) {
+             // Preview mode (no session ID), just load page 1
+             fetchChatContent(1);
+          }
+          return;
+      }
+      
+      const init = async () => {
+          try {
+              // 1. Get Progress
+              const res = await fetch(`/api/cards/${cardId}/chat-sessions/${sessionId}/progress`);
+              const data = await res.json();
+              const savedPage = data.success ? data.page : 1;
+              setPage(savedPage);
+              
+              // 2. Load Content for saved page
+              await fetchChatContent(savedPage);
+              setInitialLoaded(true);
+          } catch (e) {
+              // Fallback
+              fetchChatContent(1);
+          }
+      };
+      
+      init();
+  }, [cardId, sessionId, url, regexPipeline]); // Include regexPipeline to trigger re-process if rules change? No, handled inside fetch.
 
   // Listen for iframe height updates and trigger per-item re-measure
   useEffect(() => {
@@ -142,55 +182,143 @@ export function ChatViewer({ url, cardName, cardId, sessionId }: ChatViewerProps
     return () => window.removeEventListener('message', handler);
   }, []);
 
-  const fetchChatContent = async () => {
+  const fetchChatContent = async (pageNum: number) => {
     try {
       setLoading(true);
+      setError("");
       
-      const res = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`);
+      // Load ALL content from proxy if not already loaded (caching mechanism)
+      // Since we switched to client-side pagination, we need the FULL content first.
+      // But re-fetching 50MB every page change is bad.
+      // We should fetch once, store in a ref or state, and then paginate locally.
       
-      if (!res.ok) throw new Error("无法加载聊天记录文件");
+      // Check if we have full raw text cached
+      if (!window.chatContentCache) {
+          window.chatContentCache = {};
+      }
       
-      const text = await res.text();
+      let rawText = window.chatContentCache[url];
+      
+      if (!rawText) {
+          const fetchUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+          const res = await fetch(fetchUrl);
+          if (!res.ok) throw new Error("无法加载聊天记录文件");
+          rawText = await res.text();
+          try {
+             // Try to cache in sessionStorage if small enough, or just memory
+             window.chatContentCache[url] = rawText;
+          } catch {}
+      }
+
       // Initialize worker if needed
       if (!workerRef.current) {
         workerRef.current = createChatWorker();
-        workerRef.current.onmessage = (evt: MessageEvent<{ messages: ChatMessageData[] }>) => {
-          const { messages: processed } = evt.data;
+        workerRef.current.onmessage = (evt: MessageEvent<{ messages: ChatMessageData[]; total: number; preload?: Record<number, ChatMessageData[]> }>) => {
+          const { messages: processed, total, preload } = evt.data;
+          
           setMessages(processed);
+          setTotalCount(total);
+          
+          // Store preloaded pages
+          if (preload) {
+              Object.entries(preload).forEach(([p, msgs]) => {
+                  preloadedPages.current[parseInt(p)] = msgs;
+              });
+          }
+          
+          // Calculate if has more
+          const currentCount = (pageNum - 1) * LIMIT + processed.length;
+          setHasMore(currentCount < total);
+          
           setLoading(false);
+          // Scroll to top when page changes
+          virtuosoRef.current?.scrollToIndex({ index: 0, align: 'start' });
         };
       }
-      // Send to worker for off-main-thread processing
-      workerRef.current.postMessage({ text, rules: regexPipeline });
-      return; // early return, loading flag will be cleared by worker
+
+      // Check cache first!
+      if (preloadedPages.current[pageNum]) {
+          console.log(`Using cached data for page ${pageNum}`);
+          setMessages(preloadedPages.current[pageNum]);
+          setLoading(false);
+          virtuosoRef.current?.scrollToIndex({ index: 0, align: 'start' });
+          
+          // Still ask worker to preload NEXT pages if not cached?
+          // For simplicity, we can just trigger worker again to preload next ones if needed.
+          // But to be super fast, we skip worker if we have data.
+          // However, we need to ensure we keep preloading ahead.
+          // Let's fire-and-forget worker to preload next pages.
+          workerRef.current.postMessage({ 
+              text: rawText, 
+              rules: regexPipeline,
+              page: pageNum,
+              limit: LIMIT
+          });
+          return;
+      }
+
+      // Send to worker with pagination params
+      workerRef.current.postMessage({ 
+          text: rawText, 
+          rules: regexPipeline,
+          page: pageNum,
+          limit: LIMIT
+      });
+      
+      return; 
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError("加载失败: " + msg);
-    } finally {
-      // worker callback will clear loading; keep as fallback
-      // setLoading(false);
+      setLoading(false);
     }
+  };
+
+  const changePage = async (newPage: number) => {
+      if (newPage < 1) return;
+      
+      // Calculate max page if totalCount is known
+      if (totalCount > 0) {
+          const maxPage = Math.ceil(totalCount / LIMIT);
+          if (newPage > maxPage) return;
+      }
+      
+      setPage(newPage);
+      await fetchChatContent(newPage);
+      
+      // Save progress
+      if (sessionId && cardId) {
+          try {
+              await fetch(`/api/cards/${cardId}/chat-sessions/${sessionId}/progress`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ page: newPage })
+              });
+          } catch (e) {
+              console.error("Failed to save progress");
+          }
+      }
   };
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground">
         <Loader2 className="h-8 w-8 animate-spin mb-2" />
-        <p>正在从云端加载聊天记录...</p>
+        <p>正在加载聊天记录 (第 {page} 页)...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-[400px] text-destructive">
-        {error}
+      <div className="flex flex-col items-center justify-center h-[400px] text-destructive gap-4">
+        <p>{error}</p>
+        <Button variant="outline" onClick={() => fetchChatContent(page)}>重试</Button>
       </div>
     );
   }
 
   return (
-    <div className="h-full border rounded-lg bg-background/50 p-4 relative group/viewer">
+    <div className="h-full flex flex-col border rounded-lg bg-background/50 relative group/viewer overflow-hidden">
       {/* Share Button (Only for TXT logs and if session ID exists) */}
       {isTxtFormat && sessionId && (
           <div className="absolute top-4 right-6 z-10 opacity-0 group-hover/viewer:opacity-100 transition-opacity duration-300">
@@ -232,28 +360,68 @@ export function ChatViewer({ url, cardName, cardId, sessionId }: ChatViewerProps
           </div>
       )}
 
-      <Virtuoso
-        ref={virtuosoRef}
-        style={{ height: '100%' }}
-        data={messages}
-        totalCount={messages.length}
-        itemContent={(index, msg) => (
-          <div className="px-2">
-            <MessageCard 
-              message={msg} 
-              index={index} 
-              version={versions[index] || 0}
-              onExpand={(i) => {
-                requestAnimationFrame(() => {
-                  try {
-                    virtuosoRef.current?.scrollToIndex(i);
-                  } catch {}
-                });
-              }}
-            />
+      <div className="flex-1 overflow-hidden p-4">
+          <Virtuoso
+            ref={virtuosoRef}
+            style={{ height: '100%' }}
+            data={messages}
+            totalCount={messages.length}
+            components={{
+                Footer: () => (
+                    !hasMore && totalCount > 0 ? (
+                        <div className="text-center py-4 bg-green-500/10 text-green-600 text-xs font-medium rounded-lg mt-4 mb-2">
+                            已全部加载完毕
+                        </div>
+                    ) : null
+                )
+            }}
+            itemContent={(index, msg) => (
+              <div className="px-2">
+                <MessageCard 
+                  message={msg} 
+                  index={index} 
+                  version={versions[index] || 0}
+                  onExpand={(i) => {
+                    requestAnimationFrame(() => {
+                      try {
+                        virtuosoRef.current?.scrollToIndex(i);
+                      } catch {}
+                    });
+                  }}
+                />
+              </div>
+            )}
+          />
+      </div>
+      
+      {/* Pagination Controls */}
+      {(sessionId && cardId) && (
+          <div className="flex flex-col border-t bg-muted/20 shrink-0">
+              <div className="flex items-center justify-between px-4 py-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    disabled={page <= 1 || loading}
+                    onClick={() => changePage(page - 1)}
+                  >
+                    上一页
+                  </Button>
+                  
+                  <span className="text-sm text-muted-foreground font-mono">
+                      第 {page}/{Math.ceil(totalCount / LIMIT) || '?'} 页
+                  </span>
+
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    disabled={!hasMore || loading}
+                    onClick={() => changePage(page + 1)}
+                  >
+                    下一页
+                  </Button>
+              </div>
           </div>
-        )}
-      />
+      )}
     </div>
   );
 }

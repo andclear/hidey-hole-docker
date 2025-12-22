@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
         
         // A. Upload Original File
         await s3.send(new PutObjectCommand({
-            Bucket: bucket,
+            Bucket: bucket || undefined,
             Key: storagePath,
             Body: nodeBuffer, // PutObject accepts Buffer
             ContentType: file.type,
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
                 thumbnailPath = `${folderName}/small/${fileHash}.webp`;
 
                 await s3.send(new PutObjectCommand({
-                    Bucket: bucket,
+                    Bucket: bucket || undefined,
                     Key: thumbnailPath,
                     Body: webpBuffer,
                     ContentType: 'image/webp',
@@ -131,6 +131,7 @@ export async function POST(request: NextRequest) {
             category_id: categoryId,
             thumbnail_path: thumbnailPath || (fileExt !== 'json' ? storagePath : null), 
             data: cardData.data,
+            current_version: 1, // Initialize version
         })
         .select()
         .single();

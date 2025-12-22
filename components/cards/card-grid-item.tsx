@@ -101,6 +101,7 @@ export const CardGridItem = memo(function CardGridItem({ card, viewMode = "grid"
               src={imageUrl} 
               alt={card.name} 
               loading="lazy"
+              decoding="async"
               className={cn(
                 "h-full w-full object-cover",
                 isNsfw && "blur-sm scale-110"
@@ -181,6 +182,7 @@ export const CardGridItem = memo(function CardGridItem({ card, viewMode = "grid"
           src={imageUrl} 
           alt={card.name} 
           loading="lazy"
+          decoding="async"
           className={cn(
             "h-full w-full object-cover transition-transform duration-700 group-hover:scale-110",
             isNsfw && "blur-xl scale-110",

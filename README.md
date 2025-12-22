@@ -11,11 +11,12 @@
 **环境变量：**
 
 ```
+# Supabase（必须 - 数据库）
 NEXT_PUBLIC_SUPABASE_URL=Your-Supabase-URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY=Your-Supabase-Anon-Key
 SUPABASE_SERVICE_ROLE_KEY=Your-Supabase-Service-Role-Key
 
-# Auth (必需 - 管理员单用户认证)
+# Auth (必须 - 管理员单用户认证)
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your_password
 ```

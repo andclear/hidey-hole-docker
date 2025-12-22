@@ -36,6 +36,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+import { VersionHistoryList } from "@/components/cards/version-history-list";
+import { UpdateCardDialog } from "@/components/cards/update-card-dialog";
+
 interface CardState {
   id: string;
   name: string;
@@ -54,8 +57,9 @@ interface CardState {
   personality?: string;
   scenario?: string;
   ai_summary?: string;
-  data?: any;
+  data?: Record<string, any>;
   regex_scripts?: RegexScript[];
+  current_version?: number;
 }
 
 export default function CardDetailPage() {
@@ -67,6 +71,7 @@ export default function CardDetailPage() {
   const { data: swrData, error, mutate } = useSWR(id ? `/api/cards/${id}` : null, fetcher, {
     revalidateOnFocus: false, // Don't reload on window focus to prevent flickering
     dedupingInterval: 5000,   // Cache for 5 seconds
+    revalidateIfStale: false // Don't revalidate immediately if we have cache
   });
   
   const card = swrData?.success ? swrData.data : null;
@@ -321,9 +326,14 @@ export default function CardDetailPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex flex-col min-w-0">
-             <h1 className="text-lg font-bold truncate leading-tight group relative" title={card.name}>
-                <span className="group-hover:text-primary transition-colors">{card.name}</span>
-             </h1>
+             <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold truncate leading-tight group relative" title={card.name}>
+                    <span className="group-hover:text-primary transition-colors">{card.name}</span>
+                </h1>
+                <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-mono">
+                    v{card.current_version || 1}
+                </Badge>
+             </div>
              <div className="text-xs text-muted-foreground flex items-center gap-2">
                 <span>{card.file_type?.toUpperCase()}</span>
                 <span className="w-px h-3 bg-border"></span>
@@ -390,9 +400,9 @@ export default function CardDetailPage() {
             <div className="space-y-4 max-w-[320px] mx-auto lg:mx-0">
                
                {/* Download Card */}
-               <div className="-mt-3">
+               <div className="-mt-3 grid grid-cols-2 gap-2">
                    <Button 
-                       className="w-full"
+                       className="w-full col-span-1"
                        disabled={isDownloading}
                        onClick={async () => {
                            setIsDownloading(true);
@@ -442,15 +452,21 @@ export default function CardDetailPage() {
                        {isDownloading ? (
                            <>
                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                               正在下载...
+                               下载中
                            </>
                        ) : (
                            <>
                                <Download className="mr-2 h-4 w-4" />
-                               下载角色卡
+                               下载
                            </>
                        )}
                    </Button>
+                   
+                   <UpdateCardDialog 
+                        cardId={card.id} 
+                        currentVersion={card.current_version || 1} 
+                        onSuccess={() => mutate()} 
+                   />
                </div>
 
                {card.user_notes && (
@@ -485,7 +501,7 @@ export default function CardDetailPage() {
         <div className="h-full flex flex-col min-w-0 min-h-0 bg-background">
            <Tabs defaultValue="metadata" className="flex-1 flex flex-col min-h-0">
              <div className="px-4 py-3 bg-card border-b">
-               <TabsList className="grid w-full grid-cols-3 h-11 bg-muted/60 p-1 rounded-lg">
+               <TabsList className="grid w-full grid-cols-4 h-11 bg-muted/60 p-1 rounded-lg">
                  <TabsTrigger value="metadata" className="rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all duration-200 font-medium">
                    元数据
                  </TabsTrigger>
@@ -494,6 +510,9 @@ export default function CardDetailPage() {
                  </TabsTrigger>
                  <TabsTrigger value="review" className="rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all duration-200 font-medium">
                    个人评价
+                 </TabsTrigger>
+                 <TabsTrigger value="history" className="rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all duration-200 font-medium">
+                   版本历史
                  </TabsTrigger>
                </TabsList>
              </div>
@@ -838,6 +857,19 @@ export default function CardDetailPage() {
                      <ScrollArea className="h-full">
                          <div className="pb-10">
                             <PersonalReview cardId={id} onScoreUpdate={refreshCard} />
+                         </div>
+                    </ScrollArea>
+                 </TabsContent>
+
+                 {/* History Tab */}
+                 <TabsContent value="history" className="mt-0 h-full overflow-hidden">
+                     <ScrollArea className="h-full">
+                         <div className="pb-10 p-4 lg:p-8 max-w-4xl">
+                            <VersionHistoryList 
+                                cardId={id} 
+                                currentVersion={card.current_version || 1}
+                                currentChangelog={card.data?.version_notes} 
+                            />
                          </div>
                     </ScrollArea>
                  </TabsContent>

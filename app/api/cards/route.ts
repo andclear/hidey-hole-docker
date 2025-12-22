@@ -17,7 +17,15 @@ export async function GET(request: NextRequest) {
 
     // Base query setup
     let selectQuery = `
-        *,
+        id, 
+        name, 
+        storage_path, 
+        thumbnail_path, 
+        user_rating, 
+        is_nsfw, 
+        is_favorite, 
+        created_at, 
+        updated_at,
         categories (id, name, color),
         card_reviews (
             rating_plot,
