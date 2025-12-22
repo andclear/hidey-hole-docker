@@ -156,33 +156,37 @@ export function CategorySettings() {
               <TableHeader>
                 <TableRow>
                   <TableHead>名称</TableHead>
-                  <TableHead>描述</TableHead>
-                  <TableHead className="w-[100px]">颜色</TableHead>
-                  <TableHead className="w-[100px] text-right">操作</TableHead>
+                  <TableHead className="hidden sm:table-cell">描述</TableHead>
+                  <TableHead className="w-[100px] hidden sm:table-cell">颜色</TableHead>
+                  <TableHead className="w-[80px] sm:w-[100px] text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {categories.map((cat) => (
                   <TableRow key={cat.id}>
                     <TableCell className="font-medium align-middle">
-                      <div className="inline-flex items-center gap-2 ml-2">
-                      <Tag className="h-4 w-4 mr-1" style={{ color: cat.color }} />
-                      {cat.name}
+                      <div className="flex items-center gap-2">
+                      <Tag className="h-4 w-4 shrink-0" style={{ color: cat.color }} />
+                      <span className="truncate max-w-[120px] sm:max-w-none">{cat.name}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{cat.description || "-"}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-muted-foreground hidden sm:table-cell">
+                        <div className="truncate max-w-[200px]">
+                            {cat.description || "-"}
+                        </div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <div 
                         className="w-6 h-6 rounded-full border" 
                         style={{ backgroundColor: cat.color }} 
                       />
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(cat)}>
+                      <div className="flex justify-end gap-1 sm:gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(cat)} className="h-8 w-8">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(cat.id)}>
+                        <Button variant="ghost" size="icon" className="text-destructive h-8 w-8" onClick={() => handleDelete(cat.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

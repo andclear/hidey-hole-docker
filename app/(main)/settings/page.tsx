@@ -323,29 +323,36 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="storage" className="space-y-4">
-        <div className="px-1 py-1 bg-blue-100 dark:bg-blue-950 rounded-lg w-full">
-            <TabsList className="grid w-full grid-cols-5 h-10 bg-transparent p-0">
-                <TabsTrigger value="storage" className="rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all duration-200 font-medium">
-                    <Database className="h-4 w-4 mr-2" />
-                    存储设置
-                </TabsTrigger>
-                <TabsTrigger value="ai" className="rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all duration-200 font-medium">
-                    <Brain className="h-4 w-4 mr-2" />
-                    AI 配置
-                </TabsTrigger>                
-                <TabsTrigger value="categories" className="rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all duration-200 font-medium">
-                    <Layers className="h-4 w-4 mr-2" />
-                    分类设置
-                </TabsTrigger>
-                <TabsTrigger value="regex" className="rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all duration-200 font-medium">
-                    <Code className="h-4 w-4 mr-2" />
-                    全局正则
-                </TabsTrigger>
-                <TabsTrigger value="general" className="rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all duration-200 font-medium">
-                    <SettingsIcon className="h-4 w-4 mr-2" />
-                    通用
-                </TabsTrigger>
-            </TabsList>
+        <div className="w-full overflow-x-auto pb-2">
+            <div className="min-w-max px-1 py-1 bg-blue-100 dark:bg-blue-950 rounded-lg">
+                <TabsList className="grid w-full grid-cols-5 h-10 bg-transparent p-0 gap-1">
+                    <TabsTrigger value="storage" className="rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all duration-200 font-medium px-2 text-xs sm:text-sm">
+                        <Database className="h-4 w-4 mr-2 hidden sm:inline-block" />
+                        <span className="sm:hidden">存储</span>
+                        <span className="hidden sm:inline">存储设置</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="ai" className="rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all duration-200 font-medium px-2 text-xs sm:text-sm">
+                        <Brain className="h-4 w-4 mr-2 hidden sm:inline-block" />
+                        <span className="sm:hidden">AI</span>
+                        <span className="hidden sm:inline">AI 配置</span>
+                    </TabsTrigger>                
+                    <TabsTrigger value="categories" className="rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all duration-200 font-medium px-2 text-xs sm:text-sm">
+                        <Layers className="h-4 w-4 mr-2 hidden sm:inline-block" />
+                        <span className="sm:hidden">分类</span>
+                        <span className="hidden sm:inline">分类设置</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="regex" className="rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all duration-200 font-medium px-2 text-xs sm:text-sm">
+                        <Code className="h-4 w-4 mr-2 hidden sm:inline-block" />
+                        <span className="sm:hidden">正则</span>
+                        <span className="hidden sm:inline">全局正则</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="general" className="rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all duration-200 font-medium px-2 text-xs sm:text-sm">
+                        <SettingsIcon className="h-4 w-4 mr-2 hidden sm:inline-block" />
+                        <span className="sm:hidden">通用</span>
+                        <span className="hidden sm:inline">通用</span>
+                    </TabsTrigger>
+                </TabsList>
+            </div>
         </div>
 
         {/* Storage Settings */}
@@ -466,33 +473,33 @@ export default function SettingsPage() {
                     )}
                     
                     {aiChannels.map(channel => (
-                        <div key={channel.id} className={`flex items-center justify-between p-4 border rounded-lg ${channel.is_active ? "border-primary bg-primary/5" : "bg-card"}`}>
-                            <div className="space-y-1">
+                        <div key={channel.id} className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg ${channel.is_active ? "border-primary bg-primary/5" : "bg-card"} gap-3`}>
+                            <div className="space-y-1 w-full sm:w-auto overflow-hidden">
                                 <div className="flex items-center gap-2">
-                                    <h4 className="font-semibold">{channel.name}</h4>
-                                    {channel.is_active && <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">当前使用</span>}
+                                    <h4 className="font-semibold truncate">{channel.name}</h4>
+                                    {channel.is_active && <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full shrink-0">当前使用</span>}
                                 </div>
-                                <div className="text-xs text-muted-foreground font-mono truncate max-w-[300px]">
+                                <div className="text-xs text-muted-foreground font-mono truncate max-w-full sm:max-w-[300px]">
                                     {channel.base_url}
                                 </div>
                                 {channel.model && (
-                                    <div className="text-xs text-muted-foreground">
+                                    <div className="text-xs text-muted-foreground truncate">
                                         模型: {channel.model}
                                     </div>
                                 )}
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" onClick={() => handleTestChannel(channel)}>
+                            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                                <Button variant="outline" size="sm" onClick={() => handleTestChannel(channel)} className="h-8 text-xs">
                                     <Zap className="h-3.5 w-3.5 mr-1" /> 测试
                                 </Button>
                                 <Switch 
                                     checked={channel.is_active}
                                     onCheckedChange={(c) => handleSetActive(channel.id, c)}
                                 />
-                                <Button variant="ghost" size="icon" onClick={() => openEdit(channel)}>
+                                <Button variant="ghost" size="icon" onClick={() => openEdit(channel)} className="h-8 w-8">
                                     <SettingsIcon className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteChannel(channel.id)}>
+                                <Button variant="ghost" size="icon" className="text-destructive h-8 w-8" onClick={() => handleDeleteChannel(channel.id)}>
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                             </div>

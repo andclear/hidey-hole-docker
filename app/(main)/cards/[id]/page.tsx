@@ -359,7 +359,7 @@ export default function CardDetailPage() {
       <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-[320px_1fr] xl:grid-cols-[400px_1fr]">
         
         {/* Left Column: Poster & Quick Info (Scrollable on mobile) */}
-        <ScrollArea className="h-full border-r bg-muted/10">
+        <ScrollArea className="h-full border-r bg-muted/10 lg:block hidden">
           <div className="p-4 lg:p-6 space-y-6">
             {/* Poster Card */}
             <div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl shadow-md border bg-muted group max-w-[320px] mx-auto lg:mx-0">
@@ -522,7 +522,7 @@ export default function CardDetailPage() {
                 {/* Metadata Tab */}
                 <TabsContent value="metadata" className="mt-0 h-full flex flex-col min-h-0">
                    <Tabs defaultValue="overview" className="w-full h-full flex flex-col min-h-0">
-                        <div className="mb-6 shrink-0">
+                        <div className="mb-4 sm:mb-6 shrink-0 px-4 pt-4">
                             <TabsList className="grid w-full grid-cols-3 h-11 bg-muted/50 p-1 rounded-xl">
                                 <TabsTrigger 
                                     value="overview" 
@@ -545,10 +545,117 @@ export default function CardDetailPage() {
                             </TabsList>
                         </div>
 
-                        <TabsContent value="overview" className="flex-1 mt-0 min-h-0">
-                            <ScrollArea className="h-full -mr-4 pr-4">
-                            <div className="pb-10">
-                            <Accordion type="multiple" className="w-full space-y-4" defaultValue={["ai_summary"]}>
+                        <TabsContent value="overview" className="flex-1 mt-0 min-h-0 overflow-hidden">
+                            <ScrollArea className="h-full">
+                                <div className="p-4 lg:p-8 max-w-4xl pb-20">
+                                {/* Mobile-only Poster Section */}
+                                <div className="lg:hidden mb-6 space-y-6">
+                                    {/* Poster Card */}
+                                    <div className="relative aspect-[2/3] w-full max-w-[280px] mx-auto overflow-hidden rounded-xl shadow-md border bg-muted">
+                                        <img 
+                                            src={imageUrl} 
+                                            alt={card.name} 
+                                            className={cn(
+                                                "w-full h-full object-cover",
+                                                card.is_nsfw && "blur-xl hover:blur-none transition-all duration-500"
+                                            )}
+                                        />
+                                        {card.user_rating && card.user_rating !== "-" && (
+                                            <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md border border-white/10 shadow-sm">
+                                                <span className="text-sm font-bold text-white">{Number(card.user_rating).toFixed(1)}</span>
+                                                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                                            </div>
+                                        )}
+                                        <div className="absolute top-3 right-3 z-20">
+                                            <button
+                                                onClick={() => toggleNsfw(!card.is_nsfw)}
+                                                className="bg-black/40 backdrop-blur-md rounded-full p-2 border border-white/10 hover:bg-black/60 transition-colors"
+                                            >
+                                                {card.is_nsfw ? (
+                                                    <EyeOff className="h-4 w-4 text-white/90" />
+                                                ) : (
+                                                    <Eye className="h-4 w-4 text-white/90" />
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Actions & Info */}
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <Button className="w-full" onClick={async () => {
+                                                   setIsDownloading(true);
+                                                   try {
+                                                       toast.info("正在获取下载链接...");
+                                                       const res = await fetch("/api/cards/batch/download-urls", {
+                                                            method: "POST",
+                                                            headers: { "Content-Type": "application/json" },
+                                                            body: JSON.stringify({ card_ids: [card.id] })
+                                                       });
+                                                       const data = await res.json();
+                                                       if (!data.success || !data.urls || data.urls.length === 0) throw new Error("失败");
+                                                       const fileUrl = data.urls[0].url;
+                                                       const fileName = data.urls[0].name;
+                                                       try {
+                                                           const fileRes = await fetch(fileUrl, { mode: 'cors' });
+                                                           if (!fileRes.ok) throw new Error();
+                                                           const blob = await fileRes.blob();
+                                                           saveAs(blob, fileName);
+                                                       } catch {
+                                                           const proxyRes = await fetch(`/api/proxy-download?url=${encodeURIComponent(fileUrl)}`);
+                                                           const blob = await proxyRes.blob();
+                                                           saveAs(blob, fileName);
+                                                       }
+                                                       toast.success("下载完成");
+                                                   } catch {
+                                                       toast.error("下载失败");
+                                                   } finally {
+                                                       setIsDownloading(false);
+                                                   }
+                                               }}>
+                                                {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                                                下载卡片
+                                            </Button>
+                                            <UpdateCardDialog 
+                                                cardId={card.id} 
+                                                currentVersion={card.current_version || 1} 
+                                                onSuccess={() => mutate()} 
+                                                trigger={
+                                                    <Button variant="outline" className="w-full">
+                                                        <RefreshCw className="mr-2 h-4 w-4"/> 
+                                                        更新版本
+                                                    </Button>
+                                                }
+                                            />
+                                        </div>
+
+                                        {card.user_notes && (
+                                            <div className="p-3 bg-muted/30 rounded-lg border text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                                                <div className="text-xs font-semibold uppercase mb-1 opacity-70">用户备注</div>
+                                                {card.user_notes}
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-2">
+                                            <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                                <Hash className="h-4 w-4" /> 标签
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {card.tags && card.tags.length > 0 ? (
+                                                    card.tags.map((tag: {id: string, name: string}) => (
+                                                    <Badge key={tag.id} variant="secondary" className="px-2 py-1 text-xs font-normal bg-card hover:bg-card/80">
+                                                        {tag.name}
+                                                    </Badge>
+                                                    ))
+                                                ) : (
+                                                    <span className="text-sm text-muted-foreground italic">暂无标签</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Accordion type="multiple" className="w-full space-y-4" defaultValue={["ai_summary"]}>
                                 {/* AI Summary Card */}
                                 <div className="border rounded-lg bg-card overflow-hidden">
                                    {card.ai_summary ? (
@@ -846,7 +953,7 @@ export default function CardDetailPage() {
                  {/* Chat Tab */}
                  <TabsContent value="chat" className="mt-0 h-full overflow-hidden">
                     <ScrollArea className="h-full">
-                         <div className="pb-10">
+                         <div className="p-4 pb-20">
                             <ChatSessionList cardId={id} cardName={card.name} />
                          </div>
                     </ScrollArea>

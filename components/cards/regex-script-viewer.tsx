@@ -320,18 +320,18 @@ export function RegexScriptViewer({
 
                     <div>
                         <div className="text-xs font-medium text-muted-foreground mb-1.5">查找正则 (Find Regex)</div>
-                        <div className="bg-muted rounded p-2 text-xs font-mono break-all border">
+                        <div className="bg-muted rounded p-2 text-xs font-mono break-all border overflow-x-auto max-h-[100px]">
                         {script.findRegex}
                         </div>
                     </div>
                     
-                    <div className="flex justify-center">
+                    <div className="flex justify-center my-1">
                         <ArrowRight className="h-4 w-4 text-muted-foreground opacity-50 rotate-90" />
                     </div>
 
                     <div>
                         <div className="text-xs font-medium text-muted-foreground mb-1.5">替换内容 (Replace String)</div>
-                        <div className="bg-muted rounded p-2 text-xs font-mono whitespace-pre-wrap border break-all">
+                        <div className="bg-muted rounded p-2 text-xs font-mono whitespace-pre-wrap border break-all overflow-x-auto max-h-[200px]">
                         {script.replaceString}
                         </div>
                     </div>

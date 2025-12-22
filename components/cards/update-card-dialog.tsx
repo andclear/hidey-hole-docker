@@ -22,9 +22,10 @@ interface UpdateCardDialogProps {
   cardId: string;
   currentVersion: number;
   onSuccess?: () => void;
+  trigger?: React.ReactNode;
 }
 
-export function UpdateCardDialog({ cardId, currentVersion, onSuccess }: UpdateCardDialogProps) {
+export function UpdateCardDialog({ cardId, currentVersion, onSuccess, trigger }: UpdateCardDialogProps) {
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [changelog, setChangelog] = useState("");
@@ -84,10 +85,12 @@ export function UpdateCardDialog({ cardId, currentVersion, onSuccess }: UpdateCa
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <Upload className="h-4 w-4" />
-          更新版本
-        </Button>
+        {trigger || (
+            <Button variant="outline" className="gap-2">
+            <Upload className="h-4 w-4" />
+            更新版本
+            </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>

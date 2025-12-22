@@ -248,44 +248,45 @@ export function ChatSessionList({ cardId, cardName }: ChatSessionListProps) {
         ) : (
           visibleSessions.map((session) => (
             <Card key={session.id} className="hover:bg-muted/50 transition-colors group">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+              <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                <div className="grid grid-cols-[auto_1fr] gap-3 sm:gap-4 w-full sm:w-auto items-center">
+                  <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary shrink-0">
                     <FileText className="h-5 w-5" />
                   </div>
-                  <div>
-                    <div className="font-medium truncate max-w-[300px]" title={session.file_name}>
+                  <div className="min-w-0 overflow-hidden">
+                    <div className="font-medium truncate text-sm sm:text-base w-full" title={session.file_name}>
                       {session.file_name}
                     </div>
-                    <div className="text-xs text-muted-foreground flex gap-3 mt-1">
-                      <span>{(session.file_size / 1024).toFixed(1)} KB</span>
-                      <span>•</span>
-                      <span>{session.message_count || "?"} 条消息</span>
-                      <span>•</span>
-                      <span>{new Date(session.created_at).toLocaleDateString()}</span>
+                    <div className="text-xs text-muted-foreground flex gap-2 sm:gap-3 mt-1 items-center">
+                      <span className="shrink-0">{(session.file_size / 1024).toFixed(1)} KB</span>
+                      <span className="shrink-0">•</span>
+                      <span className="truncate">{session.message_count || "?"} 消息</span>
+                      <span className="shrink-0">•</span>
+                      <span className="shrink-0">{new Date(session.created_at).toLocaleDateString()}</span>
                     </div>
                   </div>
                 </div>
                 
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleView(session)}>
-                    <ExternalLink className="h-4 w-4 mr-1" /> 查看
+                <div className="flex gap-2 w-full sm:w-auto justify-end">
+                  <Button variant="outline" size="sm" onClick={() => handleView(session)} className="flex-1 sm:flex-none h-8 sm:h-9 text-xs sm:text-sm">
+                    <ExternalLink className="h-3.5 w-3.5 mr-1" /> 查看
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={() => openRenameDialog(session)}
                     title="重命名"
+                    className="h-8 sm:h-9 w-8 sm:w-auto px-0 sm:px-3"
                   >
-                     <Edit2 className="h-4 w-4" />
+                     <Edit2 className="h-3.5 w-3.5" />
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="text-destructive hover:bg-destructive/10 border-destructive/20"
+                    className="text-destructive hover:bg-destructive/10 border-destructive/20 h-8 sm:h-9 w-8 sm:w-auto px-0 sm:px-3"
                     onClick={() => handleDelete(session)}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </CardContent>
