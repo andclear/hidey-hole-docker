@@ -24,7 +24,8 @@ async function main() {
     console.log('🏗️  1. 同步表结构 (Prisma)...');
     // 注意：--accept-data-loss 在生产环境需谨慎，但在开发阶段或初次部署非常有用
     // 它会强制让数据库结构与 schema.prisma 一致
-    execSync('npx prisma db push --skip-generate --accept-data-loss', { stdio: 'inherit' });
+    // --skip-generate 参数在 prisma db push 中已经移除了，直接去掉即可
+    execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
 
     // 2. SQL 负责 RLS 和 触发器 (灵魂)
     console.log('🛡️  2. 应用 RLS 和 触发器 (SQL)...');
