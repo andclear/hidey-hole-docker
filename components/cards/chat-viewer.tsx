@@ -104,84 +104,6 @@ export function ChatViewer({ url, cardName, cardId, sessionId }: ChatViewerProps
 
   const LIMIT = 20;
 
-  // Fetch Regex Rules
-  useEffect(() => {
-    const fetchRegexRules = async () => {
-       try {
-         // 1. Fetch Global Settings
-         const settingsRes = await fetch("/api/settings");
-         const settingsData = await settingsRes.json();
-         const globalRules = (settingsData.data?.global_regex || []) as RegexScript[];
-
-         let cardRules: RegexScript[] = [];
-         // 2. Fetch Card Rules if cardId exists
-         if (cardId) {
-            const cardRes = await fetch(`/api/cards/${cardId}`);
-            const cardData = await cardRes.json();
-            
-            if (cardData.success && cardData.data) {
-                const builtInRules = cardData.data.data?.extensions?.regex_scripts || [];
-                const displayRules = cardData.data.regex_scripts || [];
-                cardRules = [...builtInRules, ...displayRules];
-            }
-         }
-
-         setRegexPipeline([...globalRules, ...cardRules]);
-       } catch (e) {
-         console.error("Failed to load regex rules", e);
-       }
-    };
-    
-    fetchRegexRules();
-  }, [cardId]);
-
-  // Load progress and content on mount
-  useEffect(() => {
-      if (!cardId || !sessionId) {
-          if (url) {
-             // Preview mode (no session ID), just load page 1
-             fetchChatContent(1);
-          }
-          return;
-      }
-      
-      const init = async () => {
-          try {
-              // 1. Get Progress
-              const res = await fetch(`/api/cards/${cardId}/chat-sessions/${sessionId}/progress`);
-              const data = await res.json();
-              const savedPage = data.success ? data.page : 1;
-              setPage(savedPage);
-              
-              // 2. Load Content for saved page
-              await fetchChatContent(savedPage);
-              setInitialLoaded(true);
-          } catch (e) {
-              // Fallback
-              fetchChatContent(1);
-          }
-      };
-      
-      init();
-  }, [cardId, sessionId, url, regexPipeline, fetchChatContent]); // Include regexPipeline to trigger re-process if rules change? No, handled inside fetch.
-
-  // Listen for iframe height updates and trigger per-item re-measure
-  useEffect(() => {
-    const handler = (event: MessageEvent) => {
-      const name: string | undefined = event?.data?.iframe_name;
-      if (event?.data?.type === 'TH_ADJUST_IFRAME_HEIGHT' && name) {
-        const m = name.match(/msg\-(\d+)\-part\-\d+|msg\-(\d+)\-inline\-html/);
-        const idxStr = m?.[1] ?? m?.[2];
-        if (idxStr) {
-          const idx = parseInt(idxStr, 10);
-          setVersions(prev => ({ ...prev, [idx]: (prev[idx] || 0) + 1 }));
-        }
-      }
-    };
-    window.addEventListener('message', handler);
-    return () => window.removeEventListener('message', handler);
-  }, []);
-
   const fetchChatContent = useCallback(async (pageNum: number) => {
     try {
       setLoading(true);
@@ -272,6 +194,86 @@ export function ChatViewer({ url, cardName, cardId, sessionId }: ChatViewerProps
       setLoading(false);
     }
   }, [url, regexPipeline, LIMIT]);
+
+  // Fetch Regex Rules
+  useEffect(() => {
+    const fetchRegexRules = async () => {
+       try {
+         // 1. Fetch Global Settings
+         const settingsRes = await fetch("/api/settings");
+         const settingsData = await settingsRes.json();
+         const globalRules = (settingsData.data?.global_regex || []) as RegexScript[];
+
+         let cardRules: RegexScript[] = [];
+         // 2. Fetch Card Rules if cardId exists
+         if (cardId) {
+            const cardRes = await fetch(`/api/cards/${cardId}`);
+            const cardData = await cardRes.json();
+            
+            if (cardData.success && cardData.data) {
+                const builtInRules = cardData.data.data?.extensions?.regex_scripts || [];
+                const displayRules = cardData.data.regex_scripts || [];
+                cardRules = [...builtInRules, ...displayRules];
+            }
+         }
+
+         setRegexPipeline([...globalRules, ...cardRules]);
+       } catch (e) {
+         console.error("Failed to load regex rules", e);
+       }
+    };
+    
+    fetchRegexRules();
+  }, [cardId]);
+
+  // Load progress and content on mount
+  useEffect(() => {
+      if (!cardId || !sessionId) {
+          if (url) {
+             // Preview mode (no session ID), just load page 1
+             fetchChatContent(1);
+          }
+          return;
+      }
+      
+      const init = async () => {
+          try {
+              // 1. Get Progress
+              const res = await fetch(`/api/cards/${cardId}/chat-sessions/${sessionId}/progress`);
+              const data = await res.json();
+              const savedPage = data.success ? data.page : 1;
+              setPage(savedPage);
+              
+              // 2. Load Content for saved page
+              await fetchChatContent(savedPage);
+              setInitialLoaded(true);
+          } catch (e) {
+              // Fallback
+              fetchChatContent(1);
+          }
+      };
+      
+      init();
+  }, [cardId, sessionId, url, regexPipeline, fetchChatContent]); // Include regexPipeline to trigger re-process if rules change? No, handled inside fetch.
+
+  // Listen for iframe height updates and trigger per-item re-measure
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      const name: string | undefined = event?.data?.iframe_name;
+      if (event?.data?.type === 'TH_ADJUST_IFRAME_HEIGHT' && name) {
+        const m = name.match(/msg\-(\d+)\-part\-\d+|msg\-(\d+)\-inline\-html/);
+        const idxStr = m?.[1] ?? m?.[2];
+        if (idxStr) {
+          const idx = parseInt(idxStr, 10);
+          setVersions(prev => ({ ...prev, [idx]: (prev[idx] || 0) + 1 }));
+        }
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+
 
   const changePage = async (newPage: number) => {
       if (newPage < 1) return;
