@@ -4,8 +4,7 @@ import { getStorageClient } from '@/lib/storage/client';
 
 // GET: Get presigned URL for a specific chat file
 export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  request: NextRequest
 ) {
   try {
     const { key } = await request.json();
