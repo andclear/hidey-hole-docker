@@ -7,6 +7,7 @@
     "build": "npm run deploy:db && next build --webpack",
     "start": "next start",
     "deploy:db": "node scripts/deploy.js",
+    "deploy": "node scripts/deploy.js",
     "lint": "eslint"
   },
   "dependencies": {
