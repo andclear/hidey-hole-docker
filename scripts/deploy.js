@@ -40,7 +40,7 @@ async function main() {
       // 因为我们要 AI 生成了“幂等”的 SQL (DO $$ ... END $$) 
       // 所以这里不需要复杂的拆分逻辑，直接整个文件执行即可 
       // 这里的 simple() 可以一次性执行多条语句
-      await sql.simple(sqlContent);
+      await sql.unsafe(sqlContent);
       
       console.log('✅ 安全策略已应用');
     } else {
