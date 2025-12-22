@@ -554,7 +554,7 @@ export default function SettingsPage() {
                                 id="model" 
                                 value={channelForm.model}
                                 onChange={e => setChannelForm({...channelForm, model: e.target.value})}
-                                placeholder="gpt-3.5-turbo"
+                                placeholder="gemini-2.5-flash"
                                 list="model-suggestions"
                              />
                              {fetchedModels.length > 0 && (
@@ -661,8 +661,7 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle>全局正则替换</CardTitle>
               <CardDescription>
-                配置在聊天显示前应用于所有消息的正则表达式。请上传 JSON 格式的正则脚本。
-                处理顺序：从上到下。
+                这个是用在角色卡的聊天记录预览里的，建议上传常用预设中的正则。（可以不配置）
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

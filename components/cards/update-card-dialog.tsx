@@ -132,7 +132,7 @@ export function UpdateCardDialog({ cardId, currentVersion, onSuccess }: UpdateCa
               <div className="text-sm text-amber-700 dark:text-amber-400">
                   <p className="font-medium">注意</p>
                   <p className="text-xs mt-1">
-                      更新将覆盖当前卡片的主数据。如果新图片中缺少某些元数据（如作者注释），可能会导致信息丢失。建议先备份。
+                      更新将覆盖当前卡片的主数据。元数据将会使用新版卡片中的。如果需要旧版，可以到版本历史中下载。
                   </p>
               </div>
           </div>

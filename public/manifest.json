@@ -2,8 +2,11 @@
   "name": "囤囤小兄许",
   "short_name": "囤囤小兄许",
   "description": "个人角色卡管理与浏览工具",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
   "icons": [

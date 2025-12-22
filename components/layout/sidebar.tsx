@@ -136,7 +136,7 @@ export function Sidebar({ className, defaultExpanded = false }: SidebarProps) {
                   width={32}
                   height={32}
                   className="object-cover w-full h-full"
-                  unoptimized // 暂时禁用优化，排除 Next.js 图片优化服务的干扰
+                  unoptimized={true}
                 />
             </div>
             {isExpanded && (

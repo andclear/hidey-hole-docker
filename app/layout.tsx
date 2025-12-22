@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -19,11 +19,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "囤囤小兄许 (Hidey-Hole)",
   description: "个人角色卡收藏管理系统",
+  applicationName: "囤囤小兄许",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent", // Use black-translucent for immersive feel, or 'default' if it breaks
     title: "囤囤小兄许",
+    // startupImage: [], // Can be added later for splash screens
   },
   formatDetection: {
     telephone: false,
@@ -40,6 +42,7 @@ export const metadata: Metadata = {
         { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
+      { url: "/icons/icon-152x152.png" }, // Default fallback (no size specified for general use)
       { url: "/icons/icon-152x152.png", sizes: "152x152" },
       { url: "/icons/icon-167x167.png", sizes: "167x167" },
       { url: "/icons/icon-180x180.png", sizes: "180x180" },
@@ -48,12 +51,16 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport = {
-    themeColor: "#ffffff",
+export const viewport: Viewport = {
+    themeColor: [
+      { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+      { media: "(prefers-color-scheme: dark)", color: "#1e1e2e" }, // Deep indigo/black matching globals.css
+    ],
     width: "device-width",
     initialScale: 1,
     maximumScale: 1,
-    userScalable: false, // Prevent zoom on mobile for app-like feel
+    userScalable: false,
+    viewportFit: "cover",
 };
 
 export default function RootLayout({
