@@ -65,7 +65,25 @@ export function UserProfileNav({ isCollapsed }: UserProfileNavProps) {
       if (data.success && data.data) {
         setProfile(data.data);
         setDisplayName(data.data.display_name);
-        setAvatarUrl(data.data.avatar_url);
+        
+        // 优化：如果 avatar_url 是 Data URI，我们仍然可以使用它
+        // 但如果它是 /api/user/avatar 这样的相对路径，我们也支持
+        // 为了配合 Vercel 缓存，我们这里最好将 avatar_url 设置为我们的 API 地址
+        // 但是 /api/user/profile 返回的是数据库里存的原始值 (可能是 Data URI)
+        
+        // 如果数据库里存的是 Data URI (base64)，它非常长，不适合直接作为 src，虽然也能用。
+        // 但为了利用 Vercel 缓存，我们应该让 <AvatarImage> 指向我们的 GET /api/user/avatar 接口
+        // 这样浏览器就会请求该接口，该接口返回二进制流 + Cache-Control
+        
+        // 所以，无论数据库存什么，前端统一显示 /api/user/avatar
+        // 除非用户还没设置头像
+        
+        if (data.data.avatar_url) {
+             // 强制使用我们的代理接口来显示头像
+             setAvatarUrl("/api/user/avatar");
+        } else {
+             setAvatarUrl("");
+        }
       }
     } catch (error) {
       console.error("Failed to fetch profile", error);
@@ -97,8 +115,12 @@ export function UserProfileNav({ isCollapsed }: UserProfileNavProps) {
           });
           const data = await res.json();
           if (data.success) {
-              setProfile((prev) => ({ ...prev!, avatar_url: data.avatar_url }));
-              setAvatarUrl(data.avatar_url);
+              // 上传成功后，强制刷新头像缓存
+              const timestamp = Date.now();
+              const newUrl = `/api/user/avatar?t=${timestamp}`;
+              
+              setProfile((prev) => ({ ...prev!, avatar_url: newUrl }));
+              setAvatarUrl(newUrl);
               setIsAvatarOpen(false);
               setAvatarFile(null);
               setNewAvatarUrl("");
@@ -119,6 +141,12 @@ export function UserProfileNav({ isCollapsed }: UserProfileNavProps) {
             setProfile((prev) => ({ ...prev!, [field]: finalValue }));
             if (field === 'display_name') setIsEditProfileOpen(false);
             if (field === 'avatar_url') {
+                // 如果是链接更新，也指向代理接口
+                const timestamp = Date.now();
+                const newUrl = `/api/user/avatar?t=${timestamp}`;
+                setProfile((prev) => ({ ...prev!, avatar_url: newUrl }));
+                setAvatarUrl(newUrl);
+                
                 setIsAvatarOpen(false);
                 setNewAvatarUrl("");
             }
@@ -145,7 +173,7 @@ export function UserProfileNav({ isCollapsed }: UserProfileNavProps) {
           <Button variant="ghost" className={cn("w-full justify-start px-2 h-14 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground", isCollapsed && "justify-center px-0")}>
             <div className={cn("flex items-center gap-3 w-full", isCollapsed && "justify-center")}>
               <Avatar className="h-8 w-8 rounded-lg shrink-0">
-                <AvatarImage src={profile?.avatar_url} alt={profile?.display_name} />
+                <AvatarImage src={avatarUrl} alt={profile?.display_name} />
                 <AvatarFallback className="rounded-lg">{profile?.display_name?.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
               {!isCollapsed && (

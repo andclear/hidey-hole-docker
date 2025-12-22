@@ -42,7 +42,7 @@ export async function getS3Client() {
       secretAccessKey: dbConfig.s3_secret_key || ENV_CONFIG.secretAccessKey,
     },
     bucket: dbConfig.s3_bucket || ENV_CONFIG.bucket,
-    publicUrl: ENV_CONFIG.publicUrl, // Usually env var, but could be DB
+    publicUrl: dbConfig.s3_public_url || ENV_CONFIG.publicUrl, 
   };
 
   // If no credentials found at all

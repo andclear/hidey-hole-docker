@@ -18,33 +18,53 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const key = path.join('/');
 
-    const { client: s3, bucket } = await getS3Client();
+    const { client: s3, bucket, publicUrl } = await getS3Client();
 
-    // Option A: Generate Presigned URL and Redirect (Best for performance)
-    // We can also check if we have a public URL configured in settings
-    // But for now, presigned URL is safest.
-    
-    // Add Cache-Control header to redirect to allow browser caching of the redirect itself?
-    // Usually 307 Temporary Redirect is not cached by default, 301 is.
-    // Presigned URLs expire, so we shouldn't cache the redirect for too long.
-    // But we can cache it for say 50 minutes (expiresIn is 60 min).
+    // 策略调整：始终优先使用 Vercel 代理模式 (Proxy Mode)
+    // 原因：
+    // 1. Vercel Edge 节点在国内访问速度通常优于 R2/S3 直连。
+    // 2. 解决 R2 在国内被墙或连接不稳定的问题。
+    // 3. 利用 Vercel 强大的 CDN 缓存能力。
+    // 4. 彻底解决 URL 签名过期导致的图片消失问题。
+
+    // 只有当获取 S3 客户端彻底失败时，才考虑其他方案（但这里直接报错即可）
     
     const command = new GetObjectCommand({
-      Bucket: bucket,
+      Bucket: bucket || undefined,
       Key: key,
     });
     
-    const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+    const response = await s3.send(command);
     
-    return NextResponse.redirect(url, {
-        status: 307,
+    if (!response.Body) {
+        return new NextResponse('Image not found', { status: 404 });
+    }
+
+    // 将 S3 的流转换为 Web 标准流
+    const webStream = response.Body.transformToWebStream();
+    
+    // 确定 Content-Type
+    let contentType = response.ContentType || 'application/octet-stream';
+    if (key.endsWith('.png')) contentType = 'image/png';
+    if (key.endsWith('.webp')) contentType = 'image/webp';
+    if (key.endsWith('.jpg') || key.endsWith('.jpeg')) contentType = 'image/jpeg';
+
+    return new NextResponse(webStream, {
         headers: {
-            'Cache-Control': 'public, max-age=3000, s-maxage=3000', // Cache redirect for 50 mins
+            // 永久缓存 (1年)，因为我们的文件名包含 hash，内容不可变
+            'Cache-Control': 'public, max-age=31536000, immutable',
+            'Content-Type': contentType,
+            // 可选：透传 Content-Length (如果 S3 返回了的话)
+            ...(response.ContentLength && { 'Content-Length': response.ContentLength.toString() }),
         }
     });
 
-    // Option B: Stream file through Next.js (High bandwidth usage, but works if bucket is private and no CORS)
-    // For now, redirect is better.
+    // 下面的代码已废弃：不再使用 301 重定向到 Public URL
+    /*
+    if (publicUrl) {
+       ...
+    }
+    */
 
   } catch (error) {
     console.error('Image Proxy Error:', error);
