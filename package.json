@@ -9,6 +9,7 @@
     "migrate": "node scripts/migrate.js",
     "lint": "eslint"
   },
+  
   "dependencies": {
     "@aws-sdk/client-s3": "^3.955.0",
     "@aws-sdk/lib-storage": "^3.955.0",
