@@ -11,12 +11,11 @@ async function main() {
 
   // 0. 检查环境变量
   const connectionString = 
-    process.env.POSTGRES_URL || 
     process.env.DATABASE_URL || 
-    process.env.SUPABASE_DB_URL;
+    process.env.POSTGRES_URL;
 
   if (!connectionString) {
-      console.error('❌ 错误: 缺少数据库连接字符串 (SUPABASE_DB_URL 或 POSTGRES_URL)');
+      console.error('❌ 错误: 缺少数据库连接字符串 (DATABASE_URL)');
       process.exit(1);
   }
 
