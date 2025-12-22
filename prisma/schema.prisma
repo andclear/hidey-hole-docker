@@ -1,0 +1,254 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model ai_channels {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String
+  base_url   String
+  api_key    String?
+  model      String?
+  is_active  Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model card_history {
+  id              String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  card_id         String?          @db.Uuid
+  version_number  Int
+  file_path       String
+  file_name       String?
+  file_hash       String?
+  thumbnail_path  String?
+  data            Json?
+  changelog       String?
+  created_by      String?
+  created_at      DateTime?        @default(now()) @db.Timestamptz(6)
+  character_cards character_cards? @relation(fields: [card_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([card_id, version_number])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model card_reviews {
+  card_id              String          @id @db.Uuid
+  rating_plot          Int?            @db.SmallInt
+  rating_logic         Int?            @db.SmallInt
+  rating_worldview     Int?            @db.SmallInt
+  rating_formatting    Int?            @db.SmallInt
+  rating_playability   Int?            @db.SmallInt
+  rating_human         Int?            @db.SmallInt
+  rating_first_message Int?            @db.SmallInt
+  mood                 String?
+  best_model           String?
+  best_preset          String?
+  notes                String?
+  created_at           DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime?       @default(now()) @db.Timestamptz(6)
+  character_cards      character_cards @relation(fields: [card_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model card_tags {
+  card_id         String          @db.Uuid
+  tag_id          String          @db.Uuid
+  is_manual       Boolean?        @default(true)
+  created_at      DateTime?       @default(now()) @db.Timestamptz(6)
+  character_cards character_cards @relation(fields: [card_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tags            tags            @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([card_id, tag_id])
+  @@index([card_id], map: "idx_card_tags_card_id")
+  @@index([tag_id], map: "idx_card_tags_tag_id")
+}
+
+model card_versions {
+  id                                                             String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  main_card_id                                                   String?          @db.Uuid
+  version_card_id                                                String?          @db.Uuid
+  version_name                                                   String?
+  version_notes                                                  String?
+  created_at                                                     DateTime?        @default(now()) @db.Timestamptz(6)
+  character_cards_card_versions_main_card_idTocharacter_cards    character_cards? @relation("card_versions_main_card_idTocharacter_cards", fields: [main_card_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  character_cards_card_versions_version_card_idTocharacter_cards character_cards? @relation("card_versions_version_card_idTocharacter_cards", fields: [version_card_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model categories {
+  id               String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name             String
+  description      String?
+  color            String?
+  icon             String?
+  parent_id        String?           @db.Uuid
+  sort_order       Int?              @default(0)
+  card_count       Int?              @default(0)
+  created_at       DateTime?         @default(now()) @db.Timestamptz(6)
+  categories       categories?       @relation("categoriesTocategories", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_categories categories[]      @relation("categoriesTocategories")
+  character_cards  character_cards[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model character_cards {
+  id                                                           String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  file_hash                                                    String?
+  file_name                                                    String?
+  file_size                                                    Int?
+  file_type                                                    String?
+  storage_path                                                 String?
+  thumbnail_path                                               String?
+  name                                                         String
+  description                                                  String?
+  personality                                                  String?
+  scenario                                                     String?
+  first_message                                                String?
+  creator_notes                                                String?
+  ai_summary                                                   String?
+  ai_tags                                                      String[]
+  category_id                                                  String?            @db.Uuid
+  user_rating                                                  Int?
+  rating_dimensions                                            Json?
+  user_notes                                                   String?
+  is_favorite                                                  Boolean?           @default(false)
+  is_deleted                                                   Boolean?           @default(false)
+  deleted_at                                                   DateTime?          @db.Timestamptz(6)
+  play_count                                                   Int?               @default(0)
+  last_played_at                                               DateTime?          @db.Timestamptz(6)
+  created_at                                                   DateTime?          @default(now()) @db.Timestamptz(6)
+  updated_at                                                   DateTime?          @default(now()) @db.Timestamptz(6)
+  data                                                         Json?              @default("{}")
+  regex_scripts                                                Json?              @default("[]")
+  is_nsfw                                                      Boolean?           @default(false)
+  current_version                                              Int?               @default(1)
+  card_history                                                 card_history[]
+  card_reviews                                                 card_reviews?
+  card_tags                                                    card_tags[]
+  card_versions_card_versions_main_card_idTocharacter_cards    card_versions[]    @relation("card_versions_main_card_idTocharacter_cards")
+  card_versions_card_versions_version_card_idTocharacter_cards card_versions[]    @relation("card_versions_version_card_idTocharacter_cards")
+  categories                                                   categories?        @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  chat_sessions                                                chat_sessions[]
+  collection_cards                                             collection_cards[]
+  collections                                                  collections[]
+  play_sessions                                                play_sessions[]
+  regex_rules                                                  regex_rules[]
+
+  @@index([category_id], map: "idx_character_cards_category_id")
+  @@index([created_at(sort: Desc)], map: "idx_character_cards_created_at")
+  @@index([data], map: "idx_character_cards_data", type: Gin)
+  @@index([is_favorite], map: "idx_character_cards_is_favorite")
+  @@index([is_nsfw], map: "idx_character_cards_is_nsfw")
+  @@index([name], map: "idx_character_cards_name")
+  @@index([user_rating(sort: Desc)], map: "idx_character_cards_user_rating")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model chat_sessions {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  card_id         String?          @db.Uuid
+  file_name       String
+  s3_key          String
+  file_size       BigInt?
+  message_count   Int?
+  created_at      DateTime?        @default(now()) @db.Timestamptz(6)
+  last_read_page  Int?             @default(1)
+  character_cards character_cards? @relation(fields: [card_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  shared_links    shared_links[]
+
+  @@index([card_id], map: "idx_chat_sessions_card_id")
+  @@index([created_at(sort: Desc)], map: "idx_chat_sessions_created_at")
+}
+
+model collection_cards {
+  collection_id   String          @db.Uuid
+  card_id         String          @db.Uuid
+  sort_order      Int?            @default(0)
+  added_at        DateTime?       @default(now()) @db.Timestamptz(6)
+  character_cards character_cards @relation(fields: [card_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  collections     collections     @relation(fields: [collection_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([collection_id, card_id])
+}
+
+model collections {
+  id               String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name             String
+  description      String?
+  cover_card_id    String?            @db.Uuid
+  is_smart         Boolean?           @default(false)
+  smart_filter     Json?
+  card_count       Int?               @default(0)
+  created_at       DateTime?          @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime?          @default(now()) @db.Timestamptz(6)
+  collection_cards collection_cards[]
+  character_cards  character_cards?   @relation(fields: [cover_card_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model play_sessions {
+  id               String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  card_id          String?          @db.Uuid
+  played_at        DateTime?        @default(now()) @db.Timestamptz(6)
+  duration_minutes Int?
+  model_used       String?
+  api_provider     String?
+  rating           Int?
+  mood             String?
+  notes            String?
+  screenshots      String[]
+  created_at       DateTime?        @default(now()) @db.Timestamptz(6)
+  character_cards  character_cards? @relation(fields: [card_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model regex_rules {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  card_id         String?          @db.Uuid
+  name            String
+  regex           String
+  replacement     String?
+  is_active       Boolean?         @default(true)
+  created_at      DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime?        @default(now()) @db.Timestamptz(6)
+  character_cards character_cards? @relation(fields: [card_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model settings {
+  key        String    @id
+  value      Json?
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model shared_links {
+  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  token           String        @unique
+  chat_session_id String        @db.Uuid
+  created_at      DateTime?     @default(now()) @db.Timestamptz(6)
+  expires_at      DateTime?     @db.Timestamptz(6)
+  chat_sessions   chat_sessions @relation(fields: [chat_session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([token], map: "idx_shared_links_token")
+}
+
+model tags {
+  id              String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name            String      @unique
+  color           String?
+  is_ai_generated Boolean?    @default(false)
+  usage_count     Int?        @default(0)
+  created_at      DateTime?   @default(now()) @db.Timestamptz(6)
+  card_tags       card_tags[]
+}
+
+model user_settings {
+  id         String    @id @default("default")
+  avatar_url String?
+  created_at DateTime? @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  updated_at DateTime? @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+}
