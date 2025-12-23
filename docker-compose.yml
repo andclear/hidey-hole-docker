@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  hidey-hole:
+    build: .
+    image: hidey-hole:latest
+    container_name: hidey-hole
+    ports:
+      - "9696:3000"
+    volumes:
+      # Persist data (Database and Uploads)
+      - ./data:/app/data
+    environment:
+      # Switch to Docker Mode (PGLite + Local FS)
+      - NEXT_PUBLIC_DEPLOY_MODE=docker
+      - NODE_ENV=production
+    restart: unless-stopped

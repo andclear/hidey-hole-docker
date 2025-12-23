@@ -1,7 +1,5 @@
-
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
-import { getStorageClient } from '@/lib/storage/client';
+import { chatService } from '@/lib/services/chat-service';
 
 // GET: List chat sessions for a card
 export async function GET(
@@ -10,17 +8,10 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    
-    const { data, error } = await supabaseAdmin
-      .from('chat_sessions')
-      .select('*')
-      .eq('card_id', id)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    return NextResponse.json({ success: true, data });
+    const sessions = await chatService.getSessions(id);
+    return NextResponse.json({ success: true, data: sessions });
   } catch (error) {
+    console.error('Session List Error:', error);
     return NextResponse.json({ error: 'Failed to fetch sessions' }, { status: 500 });
   }
 }
